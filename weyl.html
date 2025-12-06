@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Weyl Semimetal Simulator</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #f8fafc; }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- Icons (Inline SVGs) ---
+        const Box = ({ className, size = 24, strokeWidth = 2 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        );
+        const Download = ({ className, size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        );
+        const RotateCcw = ({ className, size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        );
+        const MousePointer2 = ({ className, size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 12 8-4.44a23.86 23.86 0 0 1 1.45 2.58 24.16 24.16 0 0 1 .55 2.82 23.88 23.88 0 0 1-.36 3.23 23.92 23.92 0 0 1-.77 2.76 23.87 23.87 0 0 1-1.4 2.47 23.94 23.94 0 0 1-1.87 2.21 23.87 23.87 0 0 1-2.21 1.86 24.06 24.06 0 0 1-2.47 1.4 23.92 23.92 0 0 1-2.76.77 23.88 23.88 0 0 1-3.23.36 24.16 24.16 0 0 1-2.82-.55A23.86 23.86 0 0 1 1.54 20L6 12"/><path d="m12 12-7.5-7.5M12 12l-7.5 7.5"/></svg>
+        );
+
+        // --- 数学核心: 4x4 实对称矩阵对角化 (Jacobi 算法) ---
+        const eigen4x4 = (matrix) => {
+            let A = [...matrix];
+            const maxIter = 15;
+            const n = 4;
+
+            for (let iter = 0; iter < maxIter; iter++) {
+                let maxVal = 0;
+                let p = 0, q = 1;
+                
+                for (let i = 0; i < n - 1; i++) {
+                for (let j = i + 1; j < n; j++) {
+                    if (Math.abs(A[i * 4 + j]) > maxVal) {
+                    maxVal = Math.abs(A[i * 4 + j]);
+                    p = i; q = j;
+                    }
+                }
+                }
+
+                if (maxVal < 1e-6) break;
+
+                const App = A[p * 4 + p];
+                const Aqq = A[q * 4 + q];
+                const Apq = A[p * 4 + q];
+                
+                const phi = 0.5 * Math.atan2(2 * Apq, Aqq - App);
+                const c = Math.cos(phi);
+                const s = Math.sin(phi);
+
+                const term1 = A[p*4+p];
+                const term2 = A[q*4+q];
+                const term3 = A[p*4+q];
+
+                A[p*4+p] = c*c*term1 - 2*s*c*term3 + s*s*term2;
+                A[q*4+q] = s*s*term1 + 2*s*c*term3 + c*c*term2;
+                A[p*4+q] = 0; A[q*4+p] = 0;
+
+                for (let k = 0; k < n; k++) {
+                    if (k !== p && k !== q) {
+                        const Akp = A[k*4+p];
+                        const Akq = A[k*4+q];
+                        A[k*4+p] = c * Akp - s * Akq;
+                        A[p*4+k] = A[k*4+p];
+                        A[k*4+q] = s * Akp + c * Akq;
+                        A[q*4+k] = A[k*4+q];
+                    }
+                }
+            }
+            return [A[0], A[5], A[10], A[15]].sort((a,b) => a - b);
+        };
+
+        const AcademicWeylSimulator = () => {
+            // 物理参数
+            const [b, setB] = useState(1.8);
+            const [delta, setDelta] = useState(1.0);
+            const [mu5, setMu5] = useState(0.0);
+            const [isExporting, setIsExporting] = useState(false);
+            
+            const mountRef = useRef(null);
+            const sceneRef = useRef(null);
+
+            // PDF 导出功能
+            const handleSavePDF = async () => {
+                if (!sceneRef.current || isExporting) return;
+                setIsExporting(true);
+                
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const { renderer, scene, camera } = sceneRef.current;
+                    
+                    // 强制渲染一帧以确保画面是最新的
+                    renderer.render(scene, camera);
+                    
+                    // 从 canvas 获取图像数据
+                    const imgData = renderer.domElement.toDataURL('image/png', 1.0);
+                    
+                    // 创建 PDF (A4 横向)
+                    const pdf = new jsPDF({
+                        orientation: 'landscape',
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+                    
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    
+                    // 添加标题
+                    pdf.setFontSize(18);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setTextColor(30, 41, 59);
+                    pdf.text('Weyl Semimetal Band Structure Simulation', pageWidth / 2, 15, { align: 'center' });
+                    
+                    // 添加参数信息
+                    pdf.setFontSize(10);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setTextColor(71, 85, 105);
+                    const paramText = `Parameters: b = ${b.toFixed(2)}, Δ = ${delta.toFixed(2)}, μ₅ = ${mu5.toFixed(2)}`;
+                    pdf.text(paramText, pageWidth / 2, 22, { align: 'center' });
+                    
+                    // 计算图像尺寸 (保持宽高比，留出右侧图例空间)
+                    const canvas = renderer.domElement;
+                    const aspectRatio = canvas.width / canvas.height;
+                    const legendWidth = 55; // 右侧图例宽度
+                    const availableWidth = pageWidth - legendWidth - 20;
+                    const imgHeight = pageHeight - 55;
+                    let imgWidth = imgHeight * aspectRatio;
+                    if (imgWidth > availableWidth) {
+                        imgWidth = availableWidth;
+                    }
+                    
+                    // 放置图像 (左侧)
+                    const imgX = 10;
+                    const imgY = 28;
+                    
+                    // 添加图像到 PDF
+                    pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth, imgHeight);
+                    
+                    // ========== 右侧图例 ==========
+                    const legendX = imgX + imgWidth + 8;
+                    let legendY = 32;
+                    const lineHeight = 5;
+                    const circleRadius = 1.5;
+                    
+                    // 图例标题 - Energy Bands
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setTextColor(51, 65, 85);
+                    pdf.text('Energy Bands (E // Z-Axis)', legendX, legendY);
+                    legendY += lineHeight + 2;
+                    
+                    // Band 颜色图例
+                    pdf.setFontSize(8);
+                    pdf.setFont('helvetica', 'normal');
+                    
+                    const bands = [
+                        { color: [220, 38, 38], name: 'Band 4 (Conduction +)' },
+                        { color: [245, 158, 11], name: 'Band 3 (Conduction -)' },
+                        { color: [96, 165, 250], name: 'Band 2 (Valence +)' },
+                        { color: [30, 64, 175], name: 'Band 1 (Valence -)' }
+                    ];
+                    
+                    bands.forEach(band => {
+                        pdf.setFillColor(...band.color);
+                        pdf.circle(legendX + circleRadius, legendY - 1, circleRadius, 'F');
+                        pdf.setTextColor(71, 85, 105);
+                        pdf.text(band.name, legendX + circleRadius * 2 + 3, legendY);
+                        legendY += lineHeight;
+                    });
+                    
+                    // 分隔线
+                    legendY += 3;
+                    pdf.setDrawColor(203, 213, 225);
+                    pdf.line(legendX, legendY, legendX + legendWidth - 10, legendY);
+                    legendY += 5;
+                    
+                    // Weyl Nodes 图例
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setTextColor(51, 65, 85);
+                    pdf.text('Weyl Nodes', legendX, legendY);
+                    legendY += lineHeight + 2;
+                    
+                    pdf.setFontSize(8);
+                    pdf.setFont('helvetica', 'normal');
+                    
+                    // W+ 节点
+                    pdf.setFillColor(16, 185, 129);
+                    pdf.circle(legendX + circleRadius, legendY - 1, circleRadius, 'F');
+                    pdf.setTextColor(71, 85, 105);
+                    pdf.text('W+ (χ = +1)', legendX + circleRadius * 2 + 3, legendY);
+                    legendY += lineHeight;
+                    
+                    // W- 节点
+                    pdf.setFillColor(239, 68, 68);
+                    pdf.circle(legendX + circleRadius, legendY - 1, circleRadius, 'F');
+                    pdf.text('W- (χ = -1)', legendX + circleRadius * 2 + 3, legendY);
+                    legendY += lineHeight + 5;
+                    
+                    // 分隔线
+                    pdf.setDrawColor(203, 213, 225);
+                    pdf.line(legendX, legendY, legendX + legendWidth - 10, legendY);
+                    legendY += 5;
+                    
+                    // 相态信息
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'bold');
+                    const hasWeylPhase = Math.abs(b) > Math.abs(delta);
+                    if (hasWeylPhase) {
+                        pdf.setTextColor(5, 150, 105);
+                        pdf.text('● Weyl Semimetal Phase', legendX, legendY);
+                    } else {
+                        pdf.setTextColor(100, 116, 139);
+                        pdf.text('● Insulating Phase', legendX, legendY);
+                    }
+                    legendY += lineHeight + 2;
+                    
+                    pdf.setFontSize(8);
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setTextColor(100, 116, 139);
+                    if (hasWeylPhase) {
+                        const kzWeyl = Math.sqrt(b * b - delta * delta);
+                        pdf.text(`kz(Weyl) = ±${kzWeyl.toFixed(3)}`, legendX, legendY);
+                        legendY += lineHeight;
+                        pdf.text(`E(W+) = +${mu5.toFixed(2)}`, legendX, legendY);
+                        legendY += lineHeight;
+                        pdf.text(`E(W-) = ${(-mu5).toFixed(2)}`, legendX, legendY);
+                    } else {
+                        pdf.text('|b| ≤ |Δ| → Gap opens', legendX, legendY);
+                    }
+                    
+                    // ========== 底部信息 ==========
+                    const footerY = pageHeight - 8;
+                    pdf.setFontSize(7);
+                    pdf.setTextColor(148, 163, 184);
+                    pdf.text('Hamiltonian: H(k) = ℏvF(τz k·σ + Δτx + bσz - μ₅τz)', 10, footerY);
+                    pdf.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - 10, footerY, { align: 'right' });
+                    
+                    // 下载 PDF
+                    pdf.save(`weyl_simulation_b${b.toFixed(2)}_delta${delta.toFixed(2)}_mu5${mu5.toFixed(2)}.pdf`);
+                    
+                } catch (error) {
+                    console.error('PDF export failed:', error);
+                    alert('PDF 导出失败，请重试');
+                } finally {
+                    setIsExporting(false);
+                }
+            };
+            
+            // 网格参数
+            const kRange = 3.0;
+            const resolution = 60; 
+
+            // --- Three.js 初始化 ---
+            useEffect(() => {
+                if (!mountRef.current) return;
+
+                // 1. Scene Setup
+                const scene = new THREE.Scene();
+                scene.background = new THREE.Color(0xffffff);
+                
+                // 关键修改：设置 PerspectiveCamera 和 Up 向量
+                const camera = new THREE.PerspectiveCamera(45, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.1, 100);
+                camera.up.set(0, 0, 1); // 设置 Z 轴向上
+                camera.position.set(6, 7, 4); // 调整初始位置适应 Z-up
+                camera.lookAt(0, 0, 0);
+
+                const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+                renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                mountRef.current.appendChild(renderer.domElement);
+
+                // 2. Lighting
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+                scene.add(ambientLight);
+
+                const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                dirLight.position.set(5, 7, 10); // 光源位置也相应调整
+                dirLight.castShadow = true;
+                scene.add(dirLight);
+
+                // 3. Helpers
+                // GridHelper 默认是 XZ 平面，我们需要它在 XY 平面 (水平面)
+                const gridHelper = new THREE.GridHelper(8, 8, 0x000000, 0xe5e5e5);
+                gridHelper.rotation.x = Math.PI / 2; // 旋转 90度，使其平行于 XY 平面
+                scene.add(gridHelper);
+
+                // 坐标轴: Red=X (kx), Green=Y (kz), Blue=Z (Energy)
+                const axesHelper = new THREE.AxesHelper(4);
+                scene.add(axesHelper);
+
+                // 4. Meshes for 4 Bands
+                const meshes = [];
+                const matOptions = {
+                    side: THREE.DoubleSide,
+                    shininess: 30,
+                    flatShading: false, 
+                    transparent: true,
+                    opacity: 0.9,
+                    vertexColors: false 
+                };
+
+                const bandColors = [0x1e40af, 0x60a5fa, 0xf59e0b, 0xdc2626]; 
+
+                for(let i=0; i<4; i++) {
+                    const geometry = new THREE.PlaneGeometry(2*kRange, 2*kRange, resolution-1, resolution-1);
+                    const material = new THREE.MeshPhongMaterial({ 
+                        ...matOptions, 
+                        color: bandColors[i],
+                    });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    // 移除之前的 rotation.x = -Math.PI/2。
+                    // PlaneGeometry 默认在 XY 平面，我们只需要修改 Z 值作为高度，这正是我们想要的。
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    scene.add(mesh);
+                    meshes.push(mesh);
+                }
+
+                // 5. Weyl Nodes - 创建标记球体和连接线
+                const weylNodeGeometry = new THREE.SphereGeometry(0.12, 32, 32);
+                const weylNodeMaterialPlus = new THREE.MeshPhongMaterial({ 
+                    color: 0x10b981, // 绿色 - W+
+                    emissive: 0x10b981,
+                    emissiveIntensity: 0.3,
+                    shininess: 100
+                });
+                const weylNodeMaterialMinus = new THREE.MeshPhongMaterial({ 
+                    color: 0xef4444, // 红色 - W-
+                    emissive: 0xef4444,
+                    emissiveIntensity: 0.3,
+                    shininess: 100
+                });
+
+                const weylNodePlus = new THREE.Mesh(weylNodeGeometry, weylNodeMaterialPlus);
+                const weylNodeMinus = new THREE.Mesh(weylNodeGeometry, weylNodeMaterialMinus);
+                weylNodePlus.visible = false;
+                weylNodeMinus.visible = false;
+                scene.add(weylNodePlus);
+                scene.add(weylNodeMinus);
+
+                // Weyl 节点光晕效果
+                const glowGeometry = new THREE.SphereGeometry(0.25, 32, 32);
+                const glowMaterialPlus = new THREE.MeshBasicMaterial({
+                    color: 0x10b981,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const glowMaterialMinus = new THREE.MeshBasicMaterial({
+                    color: 0xef4444,
+                    transparent: true,
+                    opacity: 0.3
+                });
+                const glowPlus = new THREE.Mesh(glowGeometry, glowMaterialPlus);
+                const glowMinus = new THREE.Mesh(glowGeometry, glowMaterialMinus);
+                glowPlus.visible = false;
+                glowMinus.visible = false;
+                scene.add(glowPlus);
+                scene.add(glowMinus);
+
+                // Weyl 节点之间的连接线
+                const lineGeometry = new THREE.BufferGeometry();
+                const lineMaterial = new THREE.LineBasicMaterial({ 
+                    color: 0x6366f1, 
+                    linewidth: 2,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const weylLine = new THREE.Line(lineGeometry, lineMaterial);
+                weylLine.visible = false;
+                scene.add(weylLine);
+
+                // 垂直投影线 (从节点到 z=0 平面)
+                const projLineGeometryPlus = new THREE.BufferGeometry();
+                const projLineGeometryMinus = new THREE.BufferGeometry();
+                const projLineMaterial = new THREE.LineDashedMaterial({ 
+                    color: 0x94a3b8, 
+                    linewidth: 1,
+                    dashSize: 0.1,
+                    gapSize: 0.05,
+                    transparent: true,
+                    opacity: 0.5
+                });
+                const projLinePlus = new THREE.Line(projLineGeometryPlus, projLineMaterial);
+                const projLineMinus = new THREE.Line(projLineGeometryMinus, projLineMaterial);
+                projLinePlus.visible = false;
+                projLineMinus.visible = false;
+                scene.add(projLinePlus);
+                scene.add(projLineMinus);
+
+                const weylNodes = { 
+                    plus: weylNodePlus, 
+                    minus: weylNodeMinus,
+                    glowPlus,
+                    glowMinus,
+                    line: weylLine,
+                    projLinePlus,
+                    projLineMinus
+                };
+
+                sceneRef.current = { scene, camera, renderer, meshes, weylNodes };
+
+                // 5. Controls Logic (Spherical Z-up)
+                let isDragging = false;
+                let previousMousePosition = { x: 0, y: 0 };
+                let theta = Math.PI / 4;
+                let phi = Math.PI / 6; // 这里的 phi 是与 Z 轴 (极轴) 的夹角
+                let radius = 10;
+
+                const handleInteraction = (e) => {
+                    const x = e.clientX || (e.touches && e.touches[0].clientX);
+                    const y = e.clientY || (e.touches && e.touches[0].clientY);
+                    
+                    if (e.type === 'mousedown' || e.type === 'touchstart') {
+                        isDragging = true;
+                        previousMousePosition = { x, y };
+                    } else if (e.type === 'mouseup' || e.type === 'touchend') {
+                        isDragging = false;
+                    } else if (e.type === 'mousemove' || e.type === 'touchmove') {
+                        if (!isDragging) return;
+                        const deltaMove = { x: x - previousMousePosition.x, y: y - previousMousePosition.y };
+                        theta -= deltaMove.x * 0.005;
+                        phi -= deltaMove.y * 0.005;
+                        phi = Math.max(0.1, Math.min(Math.PI - 0.1, phi)); // 限制极角
+                        
+                        updateCamera();
+                        previousMousePosition = { x, y };
+                    }
+                };
+                
+                const updateCamera = () => {
+                    // 球坐标转笛卡尔坐标 (Z-up)
+                    // x = r * sin(phi) * cos(theta)
+                    // y = r * sin(phi) * sin(theta)
+                    // z = r * cos(phi)
+                    camera.position.x = radius * Math.sin(phi) * Math.cos(theta);
+                    camera.position.y = radius * Math.sin(phi) * Math.sin(theta);
+                    camera.position.z = radius * Math.cos(phi);
+                    camera.lookAt(0, 0, 0);
+                };
+
+                const handleWheel = (e) => {
+                    e.preventDefault(); 
+                    radius += e.deltaY * 0.01;
+                    radius = Math.max(2, Math.min(30, radius)); 
+                    updateCamera();
+                };
+
+                const canvas = renderer.domElement;
+                ['mousedown', 'mousemove', 'mouseup', 'touchstart', 'touchmove', 'touchend'].forEach(evt => 
+                    canvas.addEventListener(evt, handleInteraction, { passive: true })
+                );
+                canvas.addEventListener('wheel', handleWheel, { passive: false });
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    renderer.render(scene, camera);
+                };
+                animate();
+                
+                const handleResize = () => {
+                   if (!mountRef.current) return;
+                   const width = mountRef.current.clientWidth;
+                   const height = mountRef.current.clientHeight;
+                   renderer.setSize(width, height);
+                   camera.aspect = width / height;
+                   camera.updateProjectionMatrix();
+                };
+                window.addEventListener('resize', handleResize);
+
+                // Initial camera update
+                updateCamera();
+
+                return () => {
+                    window.removeEventListener('resize', handleResize);
+                    if(mountRef.current && renderer.domElement) {
+                        mountRef.current.removeChild(renderer.domElement);
+                    }
+                    meshes.forEach(m => { m.geometry.dispose(); m.material.dispose(); });
+                };
+            }, []);
+
+            // --- Update Geometry Loop ---
+            useEffect(() => {
+                if (!sceneRef.current) return;
+                const { meshes, weylNodes } = sceneRef.current;
+                
+                for (let i = 0; i < resolution; i++) { 
+                    // i 对应 PlaneGeometry 的行 -> Y 轴方向 (现在映射为 kz)
+                    const kz = (i / (resolution - 1)) * 2 * kRange - kRange;
+                    
+                    for (let j = 0; j < resolution; j++) { 
+                        // j 对应 PlaneGeometry 的列 -> X 轴方向 (现在映射为 kx)
+                        const kx = (j / (resolution - 1)) * 2 * kRange - kRange;
+                        
+                        const m00 = kz + b - mu5; const m01 = kx; const m02 = delta; const m03 = 0;
+                        const m10 = kx; const m11 = -kz - b - mu5; const m12 = 0; const m13 = delta;
+                        const m20 = delta; const m21 = 0; const m22 = -kz + b + mu5; const m23 = -kx;
+                        const m30 = 0; const m31 = delta; const m32 = -kx; const m33 = kz - b + mu5;
+                        
+                        const matrix = [m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33];
+                        const evals = eigen4x4(matrix); 
+
+                        const idx = i * resolution + j;
+                        
+                        meshes.forEach((mesh, bandIdx) => {
+                            const pos = mesh.geometry.attributes.position;
+                            // 映射修改：
+                            // X -> kx (Red Axis)
+                            // Y -> kz (Green Axis)
+                            // Z -> Energy (Blue Axis) - Up
+                            pos.setX(idx, kx);
+                            pos.setY(idx, kz); 
+                            pos.setZ(idx, evals[bandIdx]); 
+                        });
+                    }
+                }
+
+                meshes.forEach(mesh => {
+                    mesh.geometry.attributes.position.needsUpdate = true;
+                    mesh.geometry.computeVertexNormals(); 
+                });
+
+                // --- 更新 Weyl 节点位置 ---
+                // Weyl 节点出现条件: |b| > |Δ|
+                // 节点位置: kx = 0, kz = ±√(b² - Δ²)
+                const bAbs = Math.abs(b);
+                const deltaAbs = Math.abs(delta);
+                const hasWeylNodes = bAbs > deltaAbs;
+
+                if (hasWeylNodes && weylNodes) {
+                    const kzWeyl = Math.sqrt(b * b - delta * delta);
+                    
+                    // 计算节点处的能量
+                    // μ₅ 导致两个 Weyl 节点在能量上分离：
+                    // W+ (kz > 0): E = +μ₅
+                    // W- (kz < 0): E = -μ₅
+                    const energyPlus = mu5;
+                    const energyMinus = -mu5;
+                    
+                    // W+ 节点位置: (kx=0, kz=+kzWeyl, E=+μ₅)
+                    weylNodes.plus.position.set(0, kzWeyl, energyPlus);
+                    weylNodes.plus.visible = true;
+                    weylNodes.glowPlus.position.set(0, kzWeyl, energyPlus);
+                    weylNodes.glowPlus.visible = true;
+                    
+                    // W- 节点位置: (kx=0, kz=-kzWeyl, E=-μ₅)
+                    weylNodes.minus.position.set(0, -kzWeyl, energyMinus);
+                    weylNodes.minus.visible = true;
+                    weylNodes.glowMinus.position.set(0, -kzWeyl, energyMinus);
+                    weylNodes.glowMinus.visible = true;
+                    
+                    // 更新连接线 (连接两个不同能量的节点)
+                    const linePositions = new Float32Array([
+                        0, -kzWeyl, energyMinus,
+                        0, kzWeyl, energyPlus
+                    ]);
+                    weylNodes.line.geometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+                    weylNodes.line.visible = true;
+                    
+                    // 更新投影线 (从节点到 z=0 平面)
+                    const projPlusPositions = new Float32Array([
+                        0, kzWeyl, energyPlus,
+                        0, kzWeyl, 0
+                    ]);
+                    weylNodes.projLinePlus.geometry.setAttribute('position', new THREE.BufferAttribute(projPlusPositions, 3));
+                    weylNodes.projLinePlus.computeLineDistances();
+                    weylNodes.projLinePlus.visible = true;
+                    
+                    const projMinusPositions = new Float32Array([
+                        0, -kzWeyl, energyMinus,
+                        0, -kzWeyl, 0
+                    ]);
+                    weylNodes.projLineMinus.geometry.setAttribute('position', new THREE.BufferAttribute(projMinusPositions, 3));
+                    weylNodes.projLineMinus.computeLineDistances();
+                    weylNodes.projLineMinus.visible = true;
+                    
+                } else if (weylNodes) {
+                    // 隐藏 Weyl 节点 (当 |b| <= |Δ| 时，系统处于绝缘相)
+                    weylNodes.plus.visible = false;
+                    weylNodes.minus.visible = false;
+                    weylNodes.glowPlus.visible = false;
+                    weylNodes.glowMinus.visible = false;
+                    weylNodes.line.visible = false;
+                    weylNodes.projLinePlus.visible = false;
+                    weylNodes.projLineMinus.visible = false;
+                }
+
+            }, [b, delta, mu5]);
+
+            return (
+                <div className="flex flex-col w-full h-screen bg-white text-slate-900 font-sans border border-slate-200 shadow-xl overflow-hidden">
+                
+                {/* Header */}
+                <div className="border-b border-slate-200 bg-slate-50 p-4 flex justify-between items-center shrink-0">
+                    <div>
+                    <h1 className="text-xl font-serif font-bold text-slate-900 flex items-center gap-2">
+                        <Box className="w-6 h-6 text-slate-700" strokeWidth={1.5} />
+                        Fig. 1: Weyl Semimetal Phase Simulation
+                    </h1>
+                    <p className="text-sm text-slate-500 font-serif italic mt-1 flex items-center gap-1">
+                        <span className="not-italic mr-1">Hamiltonian</span>
+                        <span>
+                        H(<b>k</b>) = ħv<sub>F</sub> (τ<sub>z</sub> <b>k</b>·<b>σ</b> + Δτ<sub>x</sub> + bσ<sub>z</sub> - μ<sub>5</sub>τ<sub>z</sub>)
+                        </span>
+                    </p>
+                    </div>
+                    <div className="flex gap-2">
+                        <button 
+                            onClick={handleSavePDF}
+                            disabled={isExporting}
+                            className={`text-xs border border-slate-300 px-3 py-1 bg-white hover:bg-slate-50 rounded transition font-serif flex items-center gap-1 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            <Download size={14}/> {isExporting ? '导出中...' : 'Save PDF'}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="flex flex-1 overflow-hidden">
+                    
+                    {/* 3D Viewport */}
+                    <div className="flex-1 relative bg-white min-h-0">
+                        <div ref={mountRef} className="w-full h-full cursor-move" />
+                        
+                        {/* Legend */}
+                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur border border-slate-200 p-3 rounded shadow-sm text-xs font-serif pointer-events-none">
+                            <div className="font-bold mb-2 text-slate-700">Energy Bands (<i>E</i> // Z-Axis)</div>
+                            <div className="flex items-center gap-2 mb-1"><div className="w-3 h-3 bg-red-600 rounded-full"></div> Band 4 (Conduction +)</div>
+                            <div className="flex items-center gap-2 mb-1"><div className="w-3 h-3 bg-amber-500 rounded-full"></div> Band 3 (Conduction -)</div>
+                            <div className="flex items-center gap-2 mb-1"><div className="w-3 h-3 bg-blue-400 rounded-full"></div> Band 2 (Valence +)</div>
+                            <div className="flex items-center gap-2 mb-3"><div className="w-3 h-3 bg-blue-800 rounded-full"></div> Band 1 (Valence -)</div>
+                            
+                            <div className="border-t border-slate-200 pt-2 mt-2">
+                                <div className="font-bold mb-2 text-slate-700">Weyl Nodes</div>
+                                <div className="flex items-center gap-2 mb-1"><div className="w-3 h-3 bg-emerald-500 rounded-full shadow-sm shadow-emerald-300"></div> W<sup>+</sup> (χ = +1)</div>
+                                <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full shadow-sm shadow-red-300"></div> W<sup>−</sup> (χ = −1)</div>
+                            </div>
+                        </div>
+                        
+                        {/* Phase Indicator */}
+                        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur border border-slate-200 p-3 rounded shadow-sm text-xs font-serif pointer-events-none">
+                            {Math.abs(b) > Math.abs(delta) ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                                    <span className="text-emerald-700 font-semibold">Weyl Semimetal Phase</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 bg-slate-400 rounded-full"></div>
+                                    <span className="text-slate-600 font-semibold">Insulating Phase</span>
+                                </div>
+                            )}
+                            <div className="mt-2 text-slate-500">
+                                {Math.abs(b) > Math.abs(delta) ? (
+                                    <span>k<sub>z</sub><sup>Weyl</sup> = ±{Math.sqrt(b*b - delta*delta).toFixed(3)}</span>
+                                ) : (
+                                    <span>|b| ≤ |Δ| → Gap opens</span>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Hint */}
+                        <div className="absolute bottom-4 right-4 text-slate-400 text-xs font-serif flex items-center gap-2 opacity-50 hover:opacity-100 transition pointer-events-none">
+                            <MousePointer2 size={12}/> Drag to Rotate | Scroll to Zoom
+                        </div>
+                    </div>
+
+                    {/* Controls */}
+                    <div className="w-80 border-l border-slate-200 bg-slate-50 flex flex-col shrink-0">
+                        <div className="p-5 flex-1 overflow-y-auto">
+                            <h3 className="font-bold text-slate-800 font-serif mb-6 flex items-center gap-2 border-b border-slate-200 pb-2">
+                                <RotateCcw size={16} /> Parameters
+                            </h3>
+                            
+                            <div className="space-y-6">
+                                <div className="group">
+                                    <div className="flex justify-between text-sm mb-2 font-serif">
+                                        <label className="text-slate-700 font-semibold">Zeeman Field (<i>b</i>)</label>
+                                        <span className="font-mono bg-white border border-slate-200 px-2 rounded text-slate-600">{b.toFixed(2)}</span>
+                                    </div>
+                                    <input type="range" min="0" max="2.5" step="0.05" value={b} 
+                                        onChange={(e) => setB(parseFloat(e.target.value))}
+                                        className="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-slate-800" />
+                                </div>
+
+                                <div className="group">
+                                    <div className="flex justify-between text-sm mb-2 font-serif">
+                                        <label className="text-slate-700 font-semibold">Mass Term (<i>Δ</i>)</label>
+                                        <span className="font-mono bg-white border border-slate-200 px-2 rounded text-slate-600">{delta.toFixed(2)}</span>
+                                    </div>
+                                    <input type="range" min="-1.5" max="1.5" step="0.05" value={delta} 
+                                        onChange={(e) => setDelta(parseFloat(e.target.value))}
+                                        className="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-slate-800" />
+                                </div>
+
+                                <div className="group">
+                                    <div className="flex justify-between text-sm mb-2 font-serif">
+                                        <label className="text-slate-700 font-semibold">Chiral Potential (<i>μ</i><sub>5</sub>)</label>
+                                        <span className="font-mono bg-white border border-slate-200 px-2 rounded text-slate-600">{mu5.toFixed(2)}</span>
+                                    </div>
+                                    <input type="range" min="-1.0" max="1.0" step="0.05" value={mu5} 
+                                        onChange={(e) => setMu5(parseFloat(e.target.value))}
+                                        className="w-full h-1 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-slate-800" />
+                                </div>
+
+                                <div className="pt-4 border-t border-slate-200 mt-4">
+                                    <button 
+                                        onClick={() => {setB(1.8); setDelta(0.5); setMu5(0.0);}}
+                                        className="w-full py-2 border border-slate-300 text-slate-600 text-xs font-serif bg-white hover:bg-slate-100 hover:text-slate-900 transition flex items-center justify-center gap-2 rounded shadow-sm"
+                                    >
+                                        <RotateCcw size={14} /> Reset to Standard Weyl Phase
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-5 bg-slate-100 border-t border-slate-200 text-xs text-slate-500 font-serif leading-relaxed space-y-2">
+                            <p><strong>Note:</strong> Energy is plotted along the Z-axis (Blue). X/Y axes correspond to k<sub>x</sub>/k<sub>z</sub> momentum space.</p>
+                            <p><strong>Weyl nodes:</strong> Appear when |b| {'>'} |Δ| at k<sub>z</sub> = ±√(b² − Δ²). W<sup>+</sup> and W<sup>−</sup> have opposite chirality (χ = ±1).</p>
+                        </div>
+
+                    </div>
+                </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AcademicWeylSimulator />);
+    </script>
+</body>
+</html>
