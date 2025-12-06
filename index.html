@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Simulations | 物理模拟演示</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --text-primary: #e8e6e3;
+            --text-secondary: #9ca3af;
+            --accent-cyan: #22d3ee;
+            --accent-purple: #a78bfa;
+            --accent-amber: #fbbf24;
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body {
+            font-family: 'Crimson Pro', Georgia, serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse at 20% 0%, rgba(34, 211, 238, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(167, 139, 250, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(251, 191, 36, 0.03) 0%, transparent 60%);
+        }
+
+        /* Grid Pattern Overlay */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        /* Header */
+        header {
+            padding: 3rem 2rem 2rem;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 0 30px rgba(34, 211, 238, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            margin-top: 0.5rem;
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--accent-cyan);
+            margin-bottom: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Project Cards */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 2rem;
+        }
+
+        .project-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .project-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(34, 211, 238, 0.3);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.4),
+                0 0 60px rgba(34, 211, 238, 0.1);
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple), var(--accent-amber));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .project-card:hover::before {
+            opacity: 1;
+        }
+
+        .card-preview {
+            height: 200px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 3D Visualization Preview Animation */
+        .weyl-preview {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .weyl-preview::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120px;
+            height: 120px;
+            transform: translate(-50%, -50%) rotateX(60deg) rotateZ(0deg);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 50%;
+            animation: orbit 8s linear infinite;
+        }
+
+        .weyl-preview::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80px;
+            height: 80px;
+            transform: translate(-50%, -50%) rotateX(60deg) rotateZ(45deg);
+            border: 2px solid var(--accent-purple);
+            border-radius: 50%;
+            animation: orbit 6s linear infinite reverse;
+        }
+
+        .weyl-node-plus, .weyl-node-minus {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            top: 50%;
+            transform: translateY(-50%);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .weyl-node-plus {
+            left: 35%;
+            background: #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+        }
+
+        .weyl-node-minus {
+            right: 35%;
+            background: #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+        }
+
+        .band-surface {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 150px;
+            height: 100px;
+            transform: translate(-50%, -50%) perspective(200px) rotateX(30deg);
+            background: linear-gradient(180deg, 
+                rgba(220, 38, 38, 0.4) 0%, 
+                rgba(245, 158, 11, 0.4) 25%,
+                transparent 50%,
+                rgba(96, 165, 250, 0.4) 75%,
+                rgba(30, 64, 175, 0.4) 100%
+            );
+            border-radius: 8px;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes orbit {
+            from { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(0deg); }
+            to { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translateY(-50%) scale(1); opacity: 1; }
+            50% { transform: translateY(-50%) scale(1.2); opacity: 0.8; }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(-50%, -50%) perspective(200px) rotateX(30deg) translateZ(0); }
+            50% { transform: translate(-50%, -50%) perspective(200px) rotateX(35deg) translateZ(10px); }
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        .card-tag {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--accent-amber);
+            background: rgba(251, 191, 36, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .card-description {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-formula {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent-cyan);
+            background: rgba(34, 211, 238, 0.08);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--accent-cyan);
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .card-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.15), rgba(167, 139, 250, 0.15));
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .card-link:hover {
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.25), rgba(167, 139, 250, 0.25));
+            border-color: var(--accent-cyan);
+            transform: translateX(4px);
+        }
+
+        .card-link svg {
+            transition: transform 0.3s;
+        }
+
+        .card-link:hover svg {
+            transform: translateX(4px);
+        }
+
+        /* Features List */
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Coming Soon Badge */
+        .coming-soon {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(251, 191, 36, 0.2);
+            color: var(--accent-amber);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Coming Soon Card Styles */
+        .project-card.coming-soon-card {
+            opacity: 0.6;
+        }
+
+        .card-preview.coming-soon-preview {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+        }
+
+        .coming-soon-icon {
+            opacity: 0.3;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+
+            main {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <div class="grid-overlay"></div>
+
+    <header>
+        <div class="logo">
+            <div class="logo-icon">⚛</div>
+        </div>
+        <h1>Physics Simulations</h1>
+        <p class="subtitle">Interactive visualizations of condensed matter physics phenomena</p>
+    </header>
+
+    <main>
+        <h2 class="section-title">// Projects</h2>
+        
+        <div class="projects-grid">
+            <!-- Weyl Semimetal Card -->
+            <article class="project-card">
+                <div class="card-preview">
+                    <div class="weyl-preview">
+                        <div class="band-surface"></div>
+                        <div class="weyl-node-plus"></div>
+                        <div class="weyl-node-minus"></div>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <span class="card-tag">Condensed Matter</span>
+                    <h3 class="card-title">Weyl Semimetal Simulator</h3>
+                    <p class="card-description">
+                        交互式 3D 可视化展示 Weyl 半金属的能带结构。
+                    </p>
+                    <div class="card-formula">
+                        H(k) = ℏv<sub>F</sub>(τ<sub>z</sub>k·σ + Δτ<sub>x</sub> + bσ<sub>z</sub> - μ₅τ<sub>z</sub>)
+                    </div>
+                    <div class="features">
+                        <span class="feature">Three.js</span>
+                        <span class="feature">React</span>
+                        <span class="feature">Real-time</span>
+                        <span class="feature">PDF Export</span>
+                    </div>
+                    <a href="weyl.html" class="card-link">
+                        启动模拟器
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                </div>
+            </article>
+
+            <!-- Placeholder for future projects -->
+            <article class="project-card coming-soon-card">
+                <div class="card-preview coming-soon-preview">
+                    <span class="coming-soon">Coming Soon</span>
+                    <svg class="coming-soon-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 6v6l4 2"/>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <span class="card-tag">Quantum</span>
+                    <h3 class="card-title">More Simulations</h3>
+                    <p class="card-description">
+                        更多物理模拟正在开发中...
+                    </p>
+                    <div class="features">
+                        <span class="feature">开发中</span>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <footer>
+        <p>Built with passion for physics | <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+    </footer>
+</body>
+</html>
+
