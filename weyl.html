@@ -146,7 +146,7 @@
                     pdf.setFontSize(10);
                     pdf.setFont('helvetica', 'normal');
                     pdf.setTextColor(71, 85, 105);
-                    const paramText = `Parameters: b = ${b.toFixed(2)}, Δ = ${delta.toFixed(2)}, μ₅ = ${mu5.toFixed(2)}`;
+                    const paramText = `Parameters: b = ${b.toFixed(2)}, Delta = ${delta.toFixed(2)}, mu5 = ${mu5.toFixed(2)}`;
                     pdf.text(paramText, pageWidth / 2, 22, { align: 'center' });
                     
                     // 计算图像尺寸 (保持宽高比，留出右侧图例空间)
@@ -219,13 +219,13 @@
                     pdf.setFillColor(16, 185, 129);
                     pdf.circle(legendX + circleRadius, legendY - 1, circleRadius, 'F');
                     pdf.setTextColor(71, 85, 105);
-                    pdf.text('W+ (χ = +1)', legendX + circleRadius * 2 + 3, legendY);
+                    pdf.text('W+ (chi = +1)', legendX + circleRadius * 2 + 3, legendY);
                     legendY += lineHeight;
                     
                     // W- 节点
                     pdf.setFillColor(239, 68, 68);
                     pdf.circle(legendX + circleRadius, legendY - 1, circleRadius, 'F');
-                    pdf.text('W- (χ = -1)', legendX + circleRadius * 2 + 3, legendY);
+                    pdf.text('W- (chi = -1)', legendX + circleRadius * 2 + 3, legendY);
                     legendY += lineHeight + 5;
                     
                     // 分隔线
@@ -239,10 +239,10 @@
                     const hasWeylPhase = Math.abs(b) > Math.abs(delta);
                     if (hasWeylPhase) {
                         pdf.setTextColor(5, 150, 105);
-                        pdf.text('● Weyl Semimetal Phase', legendX, legendY);
+                        pdf.text('Weyl Semimetal Phase', legendX, legendY);
                     } else {
                         pdf.setTextColor(100, 116, 139);
-                        pdf.text('● Insulating Phase', legendX, legendY);
+                        pdf.text('Insulating Phase', legendX, legendY);
                     }
                     legendY += lineHeight + 2;
                     
@@ -251,20 +251,20 @@
                     pdf.setTextColor(100, 116, 139);
                     if (hasWeylPhase) {
                         const kzWeyl = Math.sqrt(b * b - delta * delta);
-                        pdf.text(`kz(Weyl) = ±${kzWeyl.toFixed(3)}`, legendX, legendY);
+                        pdf.text(`kz(Weyl) = +/-${kzWeyl.toFixed(3)}`, legendX, legendY);
                         legendY += lineHeight;
                         pdf.text(`E(W+) = +${mu5.toFixed(2)}`, legendX, legendY);
                         legendY += lineHeight;
                         pdf.text(`E(W-) = ${(-mu5).toFixed(2)}`, legendX, legendY);
                     } else {
-                        pdf.text('|b| ≤ |Δ| → Gap opens', legendX, legendY);
+                        pdf.text('|b| <= |Delta| -> Gap opens', legendX, legendY);
                     }
                     
                     // ========== 底部信息 ==========
                     const footerY = pageHeight - 8;
                     pdf.setFontSize(7);
                     pdf.setTextColor(148, 163, 184);
-                    pdf.text('Hamiltonian: H(k) = ℏvF(τz k·σ + Δτx + bσz - μ₅τz)', 10, footerY);
+                    pdf.text('Hamiltonian: H(k) = hbar*vF*(tau_z * k.sigma + Delta*tau_x + b*sigma_z - mu5*tau_z)', 10, footerY);
                     pdf.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - 10, footerY, { align: 'right' });
                     
                     // 下载 PDF
