@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>纽结理论：拉紧过程演示 (Knot Pull Tight)</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 300px;
+            z-index: 100;
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        p {
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+        .control-group {
+            margin-top: 15px;
+        }
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+        #status {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #007bff;
+            font-weight: bold;
+            text-align: right;
+        }
+        .legend {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+        }
+        .color-box {
+            width: 15px;
+            height: 15px;
+            background-color: #3498db;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+        .checkbox-label {
+            font-weight: normal;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="info">
+        <h1>拓扑变换：卷曲 -> 扭转</h1>
+        <p>
+            展示 Reidemeister I 型移动的变体。
+            当带子的卷曲（Writhe）被拉直时，它转化为带子的扭转（Twist）。
+            <br><br>
+        </p>
+        
+        <div class="control-group">
+            <label for="progressSlider">
+                <span>进度控制 (拉紧)</span>
+                <span id="sliderValue">0%</span>
+            </label>
+            <input type="range" id="progressSlider" min="0" max="1" step="0.001" value="0" title="控制绳结拉紧进度">
+            <div id="status">当前状态: 松散卷曲 (Loop)</div>
+        </div>
+
+        <div class="control-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="autoPlay" checked> 自动播放
+            </label>
+        </div>
+        
+        <div class="legend">
+            <div class="color-box"></div>
+            <span>纽结 (Ribbon)</span>
+        </div>
+    </div>
+
+    <!-- 引入 Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- 场景设置 ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f2f5);
+        // 添加雾效增加深度感
+        scene.fog = new THREE.Fog(0xf0f2f5, 10, 50);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        
+        // 设置 Z 轴为向上方向
+        camera.up.set(0, 0, 1);
+        // 相机位置调整到侧面平视
+        camera.position.set(15, 0, 0);
+        camera.lookAt(0, 0, 6); // 看向带子的中心高度
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        
+        // 限制旋转：锁定极角为 90 度 (Math.PI / 2)
+        // 这样用户只能绕 Z 轴 (Azimuth) 旋转，无法上下移动视角
+        controls.minPolarAngle = Math.PI / 2;
+        controls.maxPolarAngle = Math.PI / 2;
+        controls.target.set(0, 0, 0); // 旋转中心
+
+        // --- 灯光 ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        // 灯光位置调整以适应直立模型
+        dirLight.position.set(10, 10, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        scene.add(dirLight);
+
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-5, -10, 5);
+        scene.add(backLight);
+
+        // --- 地面 ---
+        const planeGeometry = new THREE.PlaneGeometry(100, 100);
+        const planeMaterial = new THREE.ShadowMaterial({ opacity: 0.1 });
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        // 地面放在 Z 轴下方
+        plane.position.z = -6; 
+        plane.receiveShadow = true;
+        scene.add(plane);
+
+        // --- 纽带 (Ribbon) 几何体生成逻辑 ---
+
+        // 参数设置
+        const SEGMENTS = 200; 
+        const WIDTH = 0.4;    // 带子宽度 (已调小)
+        const U_RANGE = 4.0;  
+        
+        // 创建 BufferGeometry
+        const geometry = new THREE.BufferGeometry();
+        const vertexCount = (SEGMENTS + 1) * 2;
+        const positions = new Float32Array(vertexCount * 3);
+        const normals = new Float32Array(vertexCount * 3);
+        const indices = [];
+
+        // 生成索引
+        for (let i = 0; i < SEGMENTS; i++) {
+            const a = i * 2;
+            const b = i * 2 + 1;
+            const c = (i + 1) * 2;
+            const d = (i + 1) * 2 + 1;
+            indices.push(a, b, d);
+            indices.push(a, d, c);
+        }
+
+        geometry.setIndex(indices);
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+
+        const material = new THREE.MeshStandardMaterial({
+            color: 0x3498db, 
+            roughness: 0.4,
+            metalness: 0.1,
+            side: THREE.DoubleSide, 
+            flatShading: false
+        });
+
+        const ribbonMesh = new THREE.Mesh(geometry, material);
+        ribbonMesh.castShadow = true;
+        ribbonMesh.receiveShadow = true;
+        scene.add(ribbonMesh);
+
+        // --- 核心数学逻辑 ---
+
+        function lerp(start, end, t) {
+            return start * (1 - t) + end * t;
+        }
+
+        function updateRibbon(progress) {
+            // 坐标映射逻辑，使带子沿 Z 轴站立
+            
+            // amp: 2.8 -> 0.0 (加大卷曲幅度)
+            const amp = lerp(2.8, 0.0, progress); 
+            // sep: 1.5 -> 0.0 (加大分离度)
+            const sep = lerp(1.5, 0.0, progress); 
+            const totalTwist = lerp(0, Math.PI * 2, progress);
+
+            const posAttribute = geometry.attributes.position;
+            const normAttribute = geometry.attributes.normal;
+
+            const P = new THREE.Vector3();
+            const T = new THREE.Vector3(); 
+            // 参考向量为 Y 轴，因为带子沿 Z 轴延伸
+            const RefUp = new THREE.Vector3(0, 1, 0); 
+            const B = new THREE.Vector3(); 
+            const N = new THREE.Vector3(); 
+
+            for (let i = 0; i <= SEGMENTS; i++) {
+                const t = i / SEGMENTS;
+                const u = lerp(-U_RANGE, U_RANGE, t);
+
+                // --- 坐标交换： X->Z, Y->X, Z->Y ---
+                // P.z 是高度方向 (原 x)
+                // P.x 是回路平面 (原 y)
+                // P.y 是前后深度 (原 z)
+                
+                P.z = (u * 1.5) - amp * Math.sin(u); 
+                P.x = amp * Math.cos(u) - (amp * 0.5); 
+                P.y = sep * Math.sin(u * 0.5 * Math.PI + Math.PI/2); 
+
+                // --- 计算切线 ---
+                const delta = 0.01;
+                const nextZ = ((u + delta) * 1.5) - amp * Math.sin(u + delta);
+                const nextX = amp * Math.cos(u + delta) - (amp * 0.5);
+                const nextY = sep * Math.sin((u + delta) * 0.5 * Math.PI + Math.PI/2);
+                
+                T.set(nextX - P.x, nextY - P.y, nextZ - P.z).normalize();
+
+                // --- 计算标架 ---
+                B.crossVectors(T, RefUp).normalize();
+                
+                const twistAngle = (t - 0.5) * totalTwist;
+                B.applyAxisAngle(T, twistAngle);
+                N.crossVectors(B, T).normalize();
+
+                // --- 生成顶点 ---
+                const halfWidth = WIDTH / 2;
+                
+                const v1 = new THREE.Vector3().copy(P).addScaledVector(B, halfWidth);
+                posAttribute.setXYZ(i * 2, v1.x, v1.y, v1.z);
+                normAttribute.setXYZ(i * 2, N.x, N.y, N.z);
+
+                const v2 = new THREE.Vector3().copy(P).addScaledVector(B, -halfWidth);
+                posAttribute.setXYZ(i * 2 + 1, v2.x, v2.y, v2.z);
+                normAttribute.setXYZ(i * 2 + 1, N.x, N.y, N.z);
+            }
+
+            posAttribute.needsUpdate = true;
+            normAttribute.needsUpdate = true;
+            geometry.computeBoundingSphere();
+        }
+
+
+        // --- 动画循环 ---
+        let time = 0;
+        let isAutoPlay = true;
+        const slider = document.getElementById('progressSlider');
+        const sliderValue = document.getElementById('sliderValue');
+        const autoPlayCheckbox = document.getElementById('autoPlay');
+        const statusText = document.getElementById('status');
+
+        // UI 事件监听
+        slider.addEventListener('input', (e) => {
+            isAutoPlay = false;
+            autoPlayCheckbox.checked = false;
+            updateFromSlider(parseFloat(e.target.value));
+        });
+
+        autoPlayCheckbox.addEventListener('change', (e) => {
+            isAutoPlay = e.target.checked;
+        });
+
+        function updateFromSlider(val) {
+            updateRibbon(val);
+            sliderValue.textContent = Math.round(val * 100) + '%';
+            
+            if(val < 0.1) statusText.textContent = "当前状态: 松散卷曲 (Loop)";
+            else if(val > 0.9) statusText.textContent = "当前状态: 紧绷扭转 (Twist)";
+            else statusText.textContent = "当前状态: 变形中...";
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isAutoPlay) {
+                // 使用正弦波产生往复运动
+                time += 0.015;
+                // 将 sin(-1, 1) 映射到 (0, 1) 并添加暂停时间
+                let sinVal = Math.sin(time);
+                let progress = (sinVal + 1) / 2;
+                
+                // 更新滑块 UI
+                slider.value = progress;
+                sliderValue.textContent = Math.round(progress * 100) + '%';
+                
+                if(progress < 0.1) statusText.textContent = "当前状态: 松散卷曲 (Loop)";
+                else if(progress > 0.9) statusText.textContent = "当前状态: 紧绷扭转 (Twist)";
+                else statusText.textContent = "当前状态: 变形中...";
+
+                updateRibbon(progress);
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // 窗口大小调整
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // 初始化
+        updateRibbon(0);
+        animate();
+
+    </script>
+</body>
+</html>
