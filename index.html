@@ -468,6 +468,58 @@
             opacity: 0.3;
         }
 
+        /* Section Spacing */
+        .section-block {
+            margin-bottom: 5rem;
+        }
+
+        /* XRD Preview Animation */
+        .xrd-preview {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 1.5rem 1.5rem 1rem;
+            gap: 4px;
+        }
+
+        .xrd-baseline {
+            position: absolute;
+            bottom: 1rem;
+            left: 1.5rem;
+            right: 1.5rem;
+            height: 1px;
+            background: rgba(34, 211, 238, 0.3);
+        }
+
+        .xrd-peak {
+            width: 6px;
+            border-radius: 3px 3px 0 0;
+            animation: xrdPulse 3s ease-in-out infinite;
+            position: relative;
+        }
+
+        .xrd-peak:nth-child(1) { height: 18px;  background: rgba(34,211,238,0.5);  animation-delay: 0s; }
+        .xrd-peak:nth-child(2) { height: 30px;  background: rgba(34,211,238,0.6);  animation-delay: 0.1s; }
+        .xrd-peak:nth-child(3) { height: 90px;  background: rgba(34,211,238,1);    animation-delay: 0.15s; }
+        .xrd-peak:nth-child(4) { height: 22px;  background: rgba(34,211,238,0.55); animation-delay: 0.2s; }
+        .xrd-peak:nth-child(5) { height: 14px;  background: rgba(34,211,238,0.4);  animation-delay: 0.3s; }
+        .xrd-peak:nth-child(6) { height: 55px;  background: rgba(167,139,250,0.9); animation-delay: 0.4s; }
+        .xrd-peak:nth-child(7) { height: 18px;  background: rgba(167,139,250,0.5); animation-delay: 0.5s; }
+        .xrd-peak:nth-child(8) { height: 12px;  background: rgba(167,139,250,0.4); animation-delay: 0.6s; }
+        .xrd-peak:nth-child(9) { height: 70px;  background: rgba(251,191,36,0.9);  animation-delay: 0.7s; }
+        .xrd-peak:nth-child(10){ height: 20px;  background: rgba(251,191,36,0.5);  animation-delay: 0.8s; }
+        .xrd-peak:nth-child(11){ height: 10px;  background: rgba(251,191,36,0.35); animation-delay: 0.9s; }
+        .xrd-peak:nth-child(12){ height: 38px;  background: rgba(34,211,238,0.75); animation-delay: 1.0s; }
+        .xrd-peak:nth-child(13){ height: 15px;  background: rgba(34,211,238,0.45); animation-delay: 1.1s; }
+
+        @keyframes xrdPulse {
+            0%, 100% { opacity: 0.7; transform: scaleY(1); }
+            50%       { opacity: 1;   transform: scaleY(1.08); }
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             h1 {
@@ -497,7 +549,8 @@
     </header>
 
     <main>
-        <h2 class="section-title">// Projects</h2>
+        <div class="section-block">
+        <h2 class="section-title">// Physics Simulations</h2>
         
         <div class="projects-grid">
             <!-- Weyl Semimetal Card -->
@@ -584,6 +637,55 @@
                     </div>
                 </div>
             </article>
+        </div>
+        </div>
+
+        <!-- Data Analysis Section -->
+        <div class="section-block">
+        <h2 class="section-title">// Data Analysis</h2>
+
+        <div class="projects-grid">
+            <!-- XRD Card -->
+            <article class="project-card">
+                <div class="card-preview">
+                    <div class="xrd-preview">
+                        <div class="xrd-baseline"></div>
+                        <div class="xrd-peak"></div>
+                        <div class="xrd-peak"></div>
+                        <div class="xrd-peak"></div>
+                        <div class="xrd-peak"></div>
+                        <div class="xrd-peak"></div>
+                        <div class="xrd-peak"></div>
+                        <div class="xrd-peak"></div>
+                        <div class="xrd-peak"></div>
+                        <div class="xrd-peak"></div>
+                        <div class="xrd-peak"></div>
+                        <div class="xrd-peak"></div>
+                        <div class="xrd-peak"></div>
+                        <div class="xrd-peak"></div>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <span class="card-tag">Data Analysis</span>
+                    <h3 class="card-title">XRD 数据分析比对</h3>
+                    <p class="card-description">
+                        交互式 X 射线衍射数据分析工具，支持双组 XRD 曲线导入、叠加比对、峰位标注与图形导出。
+                    </p>
+                    <div class="features">
+                        <span class="feature">Plotly.js</span>
+                        <span class="feature">双曲线叠加</span>
+                        <span class="feature">峰位标注</span>
+                        <span class="feature">数据导入</span>
+                    </div>
+                    <a href="XRD_comparison/index.html" class="card-link">
+                        启动分析工具
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                </div>
+            </article>
+        </div>
         </div>
     </main>
 
