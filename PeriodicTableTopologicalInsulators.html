@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拓扑绝缘体与超导体周期表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 MathJax 用于渲染页面上的 LaTeX 数学公式 ($...$) -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        .writing-vertical-rl { writing-mode: vertical-rl; }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-200 font-sans">
+    <div class="p-4 md:p-8 max-w-6xl mx-auto">
+        <!-- 头部说明 -->
+        <header class="mb-8 border-b border-gray-200 dark:border-gray-700 pb-6">
+            <h1 class="text-3xl md:text-4xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
+                拓扑绝缘体与超导体“周期表”
+            </h1>
+            <p class="text-sm md:text-base text-gray-600 dark:text-gray-400 mt-4 leading-relaxed">
+                基于 Altland-Zirnbauer (AZ) 分类的拓扑物态周期表。行代表 10 种对称性类，列代表空间维度 $d$。
+                表中的非平庸元素（<span class="font-semibold text-blue-600 dark:text-blue-400">ℤ</span>, <span class="font-semibold text-green-600 dark:text-green-400">ℤ₂</span>, <span class="font-semibold text-purple-600 dark:text-purple-400">2ℤ</span>）表示受对称性保护的拓扑不变量。
+                <br />
+                💡 <strong>交互提示：</strong>点击表中非 $0$ 的元素，即可查看对应的代表性物理模型与材料。
+            </p>
+        </header>
+
+        <!-- 周期表主体 -->
+        <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800">
+            <table class="w-full text-center border-collapse">
+                <thead>
+                    <tr>
+                        <th colspan="5" class="py-3 px-4 border-b border-r border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700 font-semibold text-sm">
+                            对称性分类 (AZ Class)
+                        </th>
+                        <th colspan="8" class="py-3 px-4 border-b border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-700 font-semibold text-sm">
+                            空间维度 $d$ (Bott 周期性)
+                        </th>
+                    </tr>
+                    <tr class="bg-gray-50 dark:bg-gray-800/50 text-xs md:text-sm">
+                        <th class="py-2 px-3 border-b border-r border-gray-200 dark:border-gray-700">类型</th>
+                        <th class="py-2 px-3 border-b border-gray-200 dark:border-gray-700">类名</th>
+                        <th class="py-2 px-3 border-b border-gray-200 dark:border-gray-700" title="Time-Reversal Symmetry">$T$</th>
+                        <th class="py-2 px-3 border-b border-gray-200 dark:border-gray-700" title="Particle-Hole Symmetry">$C$</th>
+                        <th class="py-2 px-3 border-b border-r border-gray-200 dark:border-gray-700" title="Chiral Symmetry">$S$</th>
+                        <!-- 列头 d=0 到 d=7 由 JS 填充以保持整洁 -->
+                        <th class="py-2 px-3 border-b border-gray-200 dark:border-gray-700 font-mono">$d=0$</th>
+                        <th class="py-2 px-3 border-b border-gray-200 dark:border-gray-700 font-mono">$d=1$</th>
+                        <th class="py-2 px-3 border-b border-gray-200 dark:border-gray-700 font-mono">$d=2$</th>
+                        <th class="py-2 px-3 border-b border-gray-200 dark:border-gray-700 font-mono">$d=3$</th>
+                        <th class="py-2 px-3 border-b border-gray-200 dark:border-gray-700 font-mono hidden md:table-cell text-gray-400">$d=4$</th>
+                        <th class="py-2 px-3 border-b border-gray-200 dark:border-gray-700 font-mono hidden md:table-cell text-gray-400">$d=5$</th>
+                        <th class="py-2 px-3 border-b border-gray-200 dark:border-gray-700 font-mono hidden md:table-cell text-gray-400">$d=6$</th>
+                        <th class="py-2 px-3 border-b border-gray-200 dark:border-gray-700 font-mono hidden md:table-cell text-gray-400">$d=7$</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- 表格内容将通过 JavaScript 动态渲染 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 底部图例 -->
+        <div class="mt-8 flex flex-wrap gap-6 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <strong>$T$:</strong> 时间反演对称性 (Time-Reversal)
+            </div>
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <strong>$C$:</strong> 粒子-空穴对称性 (Particle-Hole)
+            </div>
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <strong>$S$:</strong> 手性对称性 (Chiral)
+            </div>
+            <div class="w-full mt-2 text-xs opacity-80">
+                * 符号 $\pm 1$ 表示对应对称性算符的平方 ($T^2$ 或 $C^2$)。<br/>
+                * 空间维度具有 Bott 周期性：复数类周期为 2 ($d \equiv d+2$)，实数类周期为 8 ($d \equiv d+8$)。
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情弹窗 Modal -->
+    <div id="modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
+            <div class="relative p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-800">
+                <button onclick="closeModal()" aria-label="Close" class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                
+                <div class="flex items-center gap-3 mb-2" id="modal-badges">
+                    <!-- Badges injected by JS -->
+                </div>
+                
+                <h2 id="modal-title" class="text-2xl font-bold text-gray-900 dark:text-white mt-4">
+                    <!-- Title injected by JS -->
+                </h2>
+            </div>
+
+            <div class="p-6 space-y-6">
+                <!-- Symmetry state display -->
+                <div class="flex gap-4 text-sm font-mono bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div class="flex-1 text-center border-r border-gray-200 dark:border-gray-700"><span class="text-gray-500">T:</span> <span id="modal-sym-t"></span></div>
+                    <div class="flex-1 text-center border-r border-gray-200 dark:border-gray-700"><span class="text-gray-500">C:</span> <span id="modal-sym-c"></span></div>
+                    <div class="flex-1 text-center"><span class="text-gray-500">S:</span> <span id="modal-sym-s"></span></div>
+                </div>
+
+                <div id="modal-content-details">
+                    <!-- Details injected by JS -->
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 text-right">
+                <button onclick="closeModal()" class="px-6 py-2 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-white transition-colors">
+                    关闭
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 逻辑 -->
+    <script>
+        const azClasses = [
+            { name: 'A',    type: 'Complex', t: '0',  c: '0',  s: '0',  invs: ['ℤ', '0', 'ℤ', '0', 'ℤ', '0', 'ℤ', '0'] },
+            { name: 'AIII', type: 'Complex', t: '0',  c: '0',  s: '1',  invs: ['0', 'ℤ', '0', 'ℤ', '0', 'ℤ', '0', 'ℤ'] },
+            { name: 'AI',   type: 'Real',    t: '+1', c: '0',  s: '0',  invs: ['ℤ', '0', '0', '0', '2ℤ', '0', 'ℤ₂', 'ℤ₂'] },
+            { name: 'BDI',  type: 'Real',    t: '+1', c: '+1', s: '1',  invs: ['ℤ₂', 'ℤ', '0', '0', '0', '2ℤ', '0', 'ℤ₂'] },
+            { name: 'D',    type: 'Real',    t: '0',  c: '+1', s: '0',  invs: ['ℤ₂', 'ℤ₂', 'ℤ', '0', '0', '0', '2ℤ', '0'] },
+            { name: 'DIII', type: 'Real',    t: '-1', c: '+1', s: '1',  invs: ['0', 'ℤ₂', 'ℤ₂', 'ℤ', '0', '0', '0', '2ℤ'] },
+            { name: 'AII',  type: 'Real',    t: '-1', c: '0',  s: '0',  invs: ['2ℤ', '0', 'ℤ₂', 'ℤ₂', 'ℤ', '0', '0', '0'] },
+            { name: 'CII',  type: 'Real',    t: '-1', c: '-1', s: '1',  invs: ['0', '2ℤ', '0', 'ℤ₂', 'ℤ₂', 'ℤ', '0', '0'] },
+            { name: 'C',    type: 'Real',    t: '0',  c: '-1', s: '0',  invs: ['0', '0', '2ℤ', '0', 'ℤ₂', 'ℤ₂', 'ℤ', '0'] },
+            { name: 'CI',   type: 'Real',    t: '+1', c: '-1', s: '1',  invs: ['0', '0', '0', '2ℤ', '0', 'ℤ₂', 'ℤ₂', 'ℤ'] }
+        ];
+
+        const modelDetails = {
+            'A-2': {
+                name: '整数量子霍尔效应 (IQHE)',
+                model: 'Haldane 模型 / Harper-Hofstadter 模型',
+                material: 'GaAs/AlGaAs 异质结（强磁场下），磁性拓扑绝缘体 (如 Cr 掺杂 (Bi,Sb)2Te3)',
+                desc: '最早被发现的拓扑物态。在打破时间反演对称性的二维系统中，能带的陈数 (Chern Number) 产生高度量子化的霍尔电导。材料边缘存在无能隙、单向传输的手性边缘态 (Chiral Edge States)。'
+            },
+            'AIII-1': {
+                name: 'Su-Schrieffer-Heeger (SSH) 模型',
+                model: 'SSH 一维双原子链模型',
+                material: '聚乙炔 (Polyacetylene)，一维冷原子光晶格，声学/光学拓扑晶体',
+                desc: '具有手性（或子晶格）对称性的一维晶格模型。在拓扑非平庸相中，链的两端存在受手性对称性保护的零能局域态。由于分数化电荷的存在，它奠定了拓扑孤子理论的基础。'
+            },
+            'D-1': {
+                name: '一维拓扑超导体 (Kitaev 链)',
+                model: 'Kitaev p 波超导链模型',
+                material: 'InAs / InSb 纳米线与 s 波超导体耦合体系，铁磁原子链（如铁在铅表面）',
+                desc: '无自旋费米子的 p 波超导链。这是拓扑量子计算的基石之一。由于粒子-空穴对称性，拓扑非平庸相的系统两端会产生马约拉纳零能模 (Majorana Zero Modes)，可用作受拓扑保护的量子比特。'
+            },
+            'D-2': {
+                name: '二维手性 p 波超导体 / p+ip 超导',
+                model: 'p+ip 超导模型',
+                material: '候选材料：Sr2RuO4（存疑），拓扑绝缘体/s波超导体异质结构',
+                desc: '打破时间反演对称性的二维超导体。除了具有手性马约拉纳边缘态外，在外部磁场产生的磁通涡旋 (Vortex) 核心处，会俘获马约拉纳零能模，服从非阿贝尔统计。'
+            },
+            'DIII-3': {
+                name: '三维时间反演不变拓扑超导体',
+                model: 'Balian-Werthamer 态 (BW 态)',
+                material: '液氦-3 的 B 相 (He-3 B phase)，掺杂的拓扑绝缘体 (如 CuxBi2Se3)',
+                desc: '保持时间反演对称性的三维拓扑超导体。其体态有完全的超导能隙，但表面存在由受对称性保护的无能隙多重马约拉纳狄拉克锥 (Majorana Dirac Cone)。'
+            },
+            'AII-2': {
+                name: '量子自旋霍尔效应 (QSHE) / 二维拓扑绝缘体',
+                model: 'Kane-Mele 模型，Bernevig-Hughes-Zhang (BHZ) 模型',
+                material: 'HgTe/CdTe 量子阱，InAs/GaSb 量子阱，单层 WTe2 (1T\'-WTe2)',
+                desc: '受时间反演对称性 ($T^2 = -1$) 保护的二维拓扑绝缘体，具有 $\\mathbb{Z}_2$ 拓扑不变量。其边界具有自旋-动量锁定的螺旋边缘态 (Helical edge states)，向上自旋和向下自旋向相反方向传播，免疫于非磁性杂质的背向散射。'
+            },
+            'AII-3': {
+                name: '三维强拓扑绝缘体 (3D TI)',
+                model: '三维 BHZ 模型 / Wilson-Dirac 模型',
+                material: 'Bi2Se3, Bi2Te3, Sb2Te3',
+                desc: '具有绝缘的体能隙，但在材料的三维表面存在金属态。表面态的色散关系表现为狄拉克锥，且自旋与动量锁定 (Spin-momentum locking)，只要时间反演对称性不被破坏（例如无磁性杂质），表面态就不可避免。'
+            },
+            'BDI-1': {
+                name: '具有时间反演的 Kitaev 链 / 扩展 SSH 模型',
+                model: '多带/多条 Kitaev 链耦合，具有全实数跃迁的扩展 SSH 模型',
+                material: '特殊设计的耦合超导纳米线阵列',
+                desc: '具有时间反演和粒子-空穴对称性。不同于标准的 D 类 Kitaev 链（只有 $\\mathbb{Z}_2$ 不变量），BDI 类的一维分类为整数 $\\mathbb{Z}$，这意味着系统同一端可以存在多个受保护的马约拉纳零能模而不相互湮灭。'
+            },
+            'C-2': {
+                name: '自旋单态手性拓扑超导体',
+                model: '手性 d 波超导体 (d+id 超导态)',
+                material: '强关联电子系统候选者，如特定掺杂的石墨烯（理论预测）',
+                desc: '具有自旋单态配提示对的二维超导体。自旋旋转对称性未被完全破坏，但打破了时间反演对称性。体态有能隙，边缘有传播的手性边缘态，决定了系统的热量子霍尔效应。'
+            },
+            'CII-1': {
+                name: '具有克莱默斯简并的一维拓扑超导体',
+                model: '具手性对称性和强自旋轨道耦合的相互作用一维系统',
+                material: '理论模型，暂无确认的天然材料完美匹配',
+                desc: '该维度下的拓扑不变量为偶数 $2\\mathbb{Z}$。由于 $T^2 = -1$ 带来的克莱默斯(Kramers)双重简并，拓扑非平庸的边缘态或零能模总是成对出现的。'
+            }
+        };
+
+        function getInvariantStyle(inv) {
+            switch (inv) {
+                case 'ℤ': return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-800/40 cursor-pointer font-bold shadow-sm';
+                case 'ℤ₂': return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-800/40 cursor-pointer font-bold shadow-sm';
+                case '2ℤ': return 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-800/40 cursor-pointer font-bold shadow-sm';
+                case '0': return 'text-gray-400 dark:text-gray-500 bg-gray-50/50 dark:bg-gray-800/50 cursor-default';
+                default: return '';
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            let htmlContent = '';
+
+            azClasses.forEach((cls, idx) => {
+                const borderClass = idx === 1 
+                    ? 'border-b-4 border-double border-gray-300 dark:border-gray-600' 
+                    : 'border-b border-gray-200 dark:border-gray-700';
+
+                htmlContent += `<tr class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/30 ${borderClass}">`;
+
+                // 类型合并单元格 (Complex / Real)
+                if (idx === 0) {
+                    htmlContent += `<td rowspan="2" class="py-3 px-2 border-r border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-500 uppercase tracking-wider writing-vertical-rl bg-gray-50 dark:bg-gray-800/80">复数类<br/>(Complex)</td>`;
+                }
+                if (idx === 2) {
+                    htmlContent += `<td rowspan="8" class="py-3 px-2 border-r border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-500 uppercase tracking-wider writing-vertical-rl bg-gray-50 dark:bg-gray-800/80">实数类<br/>(Real)</td>`;
+                }
+
+                htmlContent += `
+                    <td class="py-3 px-3 font-bold font-mono border-r border-gray-100 dark:border-gray-700">${cls.name}</td>
+                    <td class="py-3 px-2 font-mono text-sm border-r border-gray-100 dark:border-gray-700">${cls.t}</td>
+                    <td class="py-3 px-2 font-mono text-sm border-r border-gray-100 dark:border-gray-700">${cls.c}</td>
+                    <td class="py-3 px-2 font-mono text-sm border-r border-gray-200 dark:border-gray-700">${cls.s}</td>
+                `;
+
+                // 维度对应的元素
+                cls.invs.forEach((inv, d) => {
+                    const styleClass = getInvariantStyle(inv);
+                    const responsiveClass = d > 3 ? 'hidden md:table-cell' : '';
+                    const clickAttr = inv !== '0' ? `onclick="openModal('${cls.name}', ${d}, '${inv}', '${cls.t}', '${cls.c}', '${cls.s}')"` : '';
+                    
+                    htmlContent += `
+                        <td ${clickAttr} class="py-3 px-4 font-mono text-lg transition-all duration-200 ${styleClass} ${responsiveClass} border-r border-gray-100 dark:border-gray-700 last:border-r-0">
+                            ${inv}
+                        </td>
+                    `;
+                });
+
+                htmlContent += `</tr>`;
+            });
+
+            tbody.innerHTML = htmlContent;
+        }
+
+        // Modal 操作函数
+        function openModal(className, dim, invariant, t, c, s) {
+            const modal = document.getElementById('modal');
+            const key = `${className}-${dim}`;
+            const info = modelDetails[key];
+
+            // 填充状态角标
+            const colorClasses = getInvariantStyle(invariant).split(' ');
+            const textColor = colorClasses.find(c => c.startsWith('text-'));
+            const bgColor = colorClasses.find(c => c.startsWith('bg-'));
+
+            document.getElementById('modal-badges').innerHTML = `
+                <span class="px-3 py-1 rounded-full text-sm font-bold ${textColor} ${bgColor}">
+                    不变量: ${invariant}
+                </span>
+                <span class="text-sm font-mono bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-full text-gray-700 dark:text-gray-300">
+                    Class ${className}
+                </span>
+                <span class="text-sm font-mono bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded-full text-gray-700 dark:text-gray-300">
+                    d = ${dim}
+                </span>
+            `;
+
+            // 填充标题和对称性
+            document.getElementById('modal-title').textContent = info ? info.name : `维度 ${dim} 的 ${className} 类拓扑物态`;
+            document.getElementById('modal-sym-t').textContent = t;
+            document.getElementById('modal-sym-c').textContent = c;
+            document.getElementById('modal-sym-s').textContent = s;
+
+            // 填充详情内容
+            const detailsContainer = document.getElementById('modal-content-details');
+            if (info) {
+                detailsContainer.innerHTML = `
+                    <div>
+                        <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                            物理模型
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 leading-relaxed bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                            ${info.model}
+                        </p>
+                    </div>
+                    <div class="mt-4">
+                        <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M4.5 3h15"></path><path d="M6 3v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3"></path><path d="M14 9h4"></path></svg>
+                            候选材料 / 实验实现
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 leading-relaxed bg-green-50/50 dark:bg-green-900/10 p-3 rounded-lg border border-green-100 dark:border-green-900/30">
+                            ${info.material}
+                        </p>
+                    </div>
+                    <div class="mt-4">
+                        <h3 class="flex items-center gap-2 text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-500"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                            物理机制与特性
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
+                            ${info.desc}
+                        </p>
+                    </div>
+                `;
+            } else {
+                detailsContainer.innerHTML = `
+                    <div class="py-8 text-center text-gray-500 dark:text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 opacity-50"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <p class="text-lg mb-2 text-gray-700 dark:text-gray-300">
+                            该参数空间存在理论上的拓扑不变量（${invariant}）
+                        </p>
+                        <p class="text-sm max-w-md mx-auto">
+                            在此对称性分类下，具有相应的受拓扑保护的边界态。但它可能尚未有像量子自旋霍尔效应那样广为人知的“代表性标准材料”或高度普及的唯象模型，代表了凝聚态物理/拓扑数学中更深奥的理论分类。
+                        </p>
+                    </div>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        // 初始化渲染
+        document.addEventListener('DOMContentLoaded', renderTable);
+    </script>
+</body>
+</html>

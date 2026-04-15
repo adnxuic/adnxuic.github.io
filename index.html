@@ -473,6 +473,57 @@
             margin-bottom: 5rem;
         }
 
+        /* AZ Table Preview Animation */
+        .az-preview {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 4px;
+            padding: 1.25rem;
+            align-items: center;
+            justify-items: center;
+        }
+
+        .az-cell {
+            width: 100%;
+            height: 100%;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.55rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: azGlow 3s ease-in-out infinite;
+        }
+
+        .az-cell.zero  { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.2); animation: none; }
+        .az-cell.zz    { background: rgba(34,211,238,0.15);  color: rgba(34,211,238,0.9);  animation-delay: var(--d); }
+        .az-cell.z2    { background: rgba(74,222,128,0.15);  color: rgba(74,222,128,0.9);  animation-delay: var(--d); }
+        .az-cell.twoz  { background: rgba(167,139,250,0.15); color: rgba(167,139,250,0.9); animation-delay: var(--d); }
+        .az-cell.label { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); font-size: 0.5rem; animation: none; }
+
+        /* Staggered animation delays via nth-child (row×6 + col offset) */
+        .az-preview > .az-cell:nth-child(8)  { animation-delay: 0.1s; }
+        .az-preview > .az-cell:nth-child(10) { animation-delay: 0.3s; }
+        .az-preview > .az-cell:nth-child(12) { animation-delay: 0.5s; }
+        .az-preview > .az-cell:nth-child(14) { animation-delay: 0.2s; }
+        .az-preview > .az-cell:nth-child(16) { animation-delay: 0.6s; }
+        .az-preview > .az-cell:nth-child(17) { animation-delay: 0.8s; }
+        .az-preview > .az-cell:nth-child(18) { animation-delay: 1.0s; }
+        .az-preview > .az-cell:nth-child(20) { animation-delay: 0.4s; }
+        .az-preview > .az-cell:nth-child(21) { animation-delay: 0.7s; }
+        .az-preview > .az-cell:nth-child(22) { animation-delay: 0.9s; }
+        .az-preview > .az-cell:nth-child(27) { animation-delay: 0.5s; }
+        .az-preview > .az-cell:nth-child(28) { animation-delay: 1.1s; }
+        .az-preview > .az-cell:nth-child(29) { animation-delay: 1.3s; }
+
+        @keyframes azGlow {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50%       { opacity: 1;   transform: scale(1.08); }
+        }
+
         /* XRD Preview Animation */
         .xrd-preview {
             width: 100%;
@@ -610,6 +661,71 @@
                     </div>
                     <a href="TightenTheKnot.html" class="card-link">
                         启动模拟器
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                </div>
+            </article>
+
+            <!-- Topological Insulators Periodic Table Card -->
+            <article class="project-card">
+                <div class="card-preview">
+                    <div class="az-preview">
+                        <!-- Row 1: header -->
+                        <div class="az-cell label">AZ</div>
+                        <div class="az-cell label">d=0</div>
+                        <div class="az-cell label">d=1</div>
+                        <div class="az-cell label">d=2</div>
+                        <div class="az-cell label">d=3</div>
+                        <div class="az-cell label">d=4</div>
+                        <!-- Row 2: A (children 7-12) -->
+                        <div class="az-cell label">A</div>
+                        <div class="az-cell zz">ℤ</div>
+                        <div class="az-cell zero">0</div>
+                        <div class="az-cell zz">ℤ</div>
+                        <div class="az-cell zero">0</div>
+                        <div class="az-cell zz">ℤ</div>
+                        <!-- Row 3: AII (children 13-18) -->
+                        <div class="az-cell label">AII</div>
+                        <div class="az-cell twoz">2ℤ</div>
+                        <div class="az-cell zero">0</div>
+                        <div class="az-cell z2">ℤ₂</div>
+                        <div class="az-cell z2">ℤ₂</div>
+                        <div class="az-cell zz">ℤ</div>
+                        <!-- Row 4: D (children 19-24) -->
+                        <div class="az-cell label">D</div>
+                        <div class="az-cell z2">ℤ₂</div>
+                        <div class="az-cell z2">ℤ₂</div>
+                        <div class="az-cell zz">ℤ</div>
+                        <div class="az-cell zero">0</div>
+                        <div class="az-cell zero">0</div>
+                        <!-- Row 5: DIII (children 25-30) -->
+                        <div class="az-cell label">DIII</div>
+                        <div class="az-cell zero">0</div>
+                        <div class="az-cell z2">ℤ₂</div>
+                        <div class="az-cell z2">ℤ₂</div>
+                        <div class="az-cell zz">ℤ</div>
+                        <div class="az-cell zero">0</div>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <span class="card-tag">Topology</span>
+                    <h3 class="card-title">拓扑绝缘体与超导体周期表</h3>
+                    <p class="card-description">
+                        基于 Altland-Zirnbauer (AZ) 对称性分类的拓扑物态周期表，包含 10 种对称性类与各维度拓扑不变量，可交互查看代表性材料与模型。
+                    </p>
+                    <div class="card-formula">
+                        ℤ &nbsp;|&nbsp; ℤ₂ &nbsp;|&nbsp; 2ℤ &nbsp;→&nbsp; AZ Classification
+                    </div>
+                    <div class="features">
+                        <span class="feature">AZ 10-fold Way</span>
+                        <span class="feature">Bott 周期性</span>
+                        <span class="feature">交互弹窗</span>
+                        <span class="feature">MathJax</span>
+                    </div>
+                    <a href="PeriodicTableTopologicalInsulators.html" class="card-link">
+                        查看周期表
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M5 12h14M12 5l7 7-7 7"/>
                         </svg>
