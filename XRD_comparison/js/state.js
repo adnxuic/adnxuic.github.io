@@ -66,21 +66,44 @@
       return line.trim().split(/\s+/);
     },
 
+    isDataLine: function(parts) {
+      return parts.length > 0 && parts.every(function(p) {
+        return p.trim() !== '' && !isNaN(Number(p));
+      });
+    },
+
     parseFile: function(text) {
       var self = this;
-      var lines = text.split(/\r?\n/).filter(function(l){ return l.trim() !== ''; });
-      if (lines.length === 0) return null;
-      var delim = self.detectDelimiter(lines);
+      var rawLines = text.split(/\r?\n/).filter(function(l){ return l.trim() !== ''; });
+      if (rawLines.length === 0) return null;
 
-      var firstParts = self.splitLine(lines[0], delim);
-      var hasHeader = firstParts.some(function(p){ return isNaN(Number(p)); });
-      var headerNames = null;
-      if (hasHeader) {
-        headerNames = firstParts;
-        lines = lines.slice(1);
+      var delim = self.detectDelimiter(rawLines);
+
+      // 找到第一行全为数值的行，自动跳过之前所有表头行
+      var dataStartIdx = 0;
+      for (var i = 0; i < rawLines.length; i++) {
+        var parts = self.splitLine(rawLines[i], delim);
+        if (self.isDataLine(parts)) {
+          dataStartIdx = i;
+          break;
+        }
       }
 
-      var rows = lines.map(function(l){ return self.splitLine(l, delim).map(Number); });
+      var skippedRows = dataStartIdx;
+      var hasHeader = skippedRows > 0;
+      var headerNames = null;
+
+      // 仅当只有一行表头时，将其作为列名
+      if (skippedRows === 1) {
+        headerNames = self.splitLine(rawLines[0], delim);
+      }
+
+      var dataLines = rawLines.slice(dataStartIdx);
+      var rows = dataLines.map(function(l){ return self.splitLine(l, delim).map(Number); });
+      rows = rows.filter(function(row){
+        return row.length > 0 && row.every(function(v){ return !isNaN(v); });
+      });
+
       var numCols = 0;
       for (var r = 0; r < rows.length; r++) {
         if (rows[r].length > numCols) numCols = rows[r].length;
@@ -89,7 +112,7 @@
       var columns = [];
       for (var c = 0; c < numCols; c++) {
         columns.push({
-          name: (hasHeader && headerNames && headerNames[c]) ? headerNames[c] : 'Col_' + (c + 1),
+          name: (headerNames && headerNames[c]) ? headerNames[c] : 'Col_' + (c + 1),
           data: rows.map(function(row){ return c < row.length ? row[c] : NaN; })
         });
       }
@@ -99,7 +122,8 @@
         previewRows: rows.slice(0, 10),
         numCols: numCols,
         delim: delim,
-        hasHeader: hasHeader
+        hasHeader: hasHeader,
+        skippedRows: skippedRows
       };
     },
 

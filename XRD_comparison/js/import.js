@@ -29,11 +29,14 @@
     var html = '';
     X.pendingImport.forEach(function(file, fi) {
       var delimLabel = file.delim === 'tab' ? 'Tab' : (file.delim === 'comma' ? '\u9017\u53F7' : '\u7A7A\u683C');
+      var headerInfo = file.skippedRows > 0
+        ? ', \u5DF2\u8DF3\u8FC7 ' + file.skippedRows + ' \u884C\u8868\u5934'
+        : '';
       html += '<div class="import-file-section">' +
         '<div class="import-file-header">' + X.esc(file.fileName) +
         ' <span class="text-dim">(' + file.totalRows + ' \u884C, ' +
         file.numCols + ' \u5217, ' + delimLabel + '\u5206\u9694' +
-        (file.hasHeader ? ', \u542B\u8868\u5934' : '') + ')</span></div>' +
+        headerInfo + ')</span></div>' +
         '<div class="preview-table-wrap"><table class="preview-table"><thead><tr>';
 
       file.columns.forEach(function(col, ci) {
