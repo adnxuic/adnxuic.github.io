@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>化学元素周期表</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="js/app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div>
+        <p class="eyebrow">Periodic Table</p>
+        <h1>化学元素周期表</h1>
+      </div>
+      <div class="header-note">
+        <span>外层电子排布</span>
+        <span>经验原子半径</span>
+        <span>20°C 固体熔点</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="toolbar" aria-label="筛选与说明">
+        <label class="search-box">
+          <span>搜索</span>
+          <input id="searchInput" type="search" placeholder="元素名、符号或序号">
+        </label>
+        <div id="legend" class="legend" aria-label="元素分类图例"></div>
+      </section>
+
+      <section class="table-section" aria-label="元素周期表">
+        <div id="statusMessage" class="status-message">正在加载元素数据...</div>
+        <div id="periodicTable" class="periodic-grid" hidden></div>
+      </section>
+
+      <section class="series-section" aria-label="镧系和锕系">
+        <div class="series-label">镧系</div>
+        <div id="lanthanides" class="series-grid"></div>
+        <div class="series-label">锕系</div>
+        <div id="actinides" class="series-grid"></div>
+      </section>
+    </main>
+
+    <div id="elementModal" class="modal" hidden>
+      <div class="modal-backdrop" data-close-modal></div>
+      <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button class="modal-close" type="button" data-close-modal aria-label="关闭详情">×</button>
+        <div id="modalContent"></div>
+      </section>
+    </div>
+
+    <footer class="site-footer">
+      <p>
+        状态与熔点来源：
+        <a href="https://pubchem.ncbi.nlm.nih.gov/periodic-table/" target="_blank" rel="noreferrer">PubChem Periodic Table</a>。
+        外层电子排布与非键合原子半径来源：
+        <a href="https://periodic-table.rsc.org/" target="_blank" rel="noreferrer">Royal Society of Chemistry Periodic Table</a>。
+        经验原子半径来源：
+        <a href="https://pubchem.ncbi.nlm.nih.gov/periodic-table/" target="_blank" rel="noreferrer">PubChem Periodic Table</a>。
+        电子排布抽样校验参考：
+        <a href="https://physics.nist.gov/PhysRefData/ASD/ionEnergy.html" target="_blank" rel="noreferrer">NIST ASD Ground States and Ionization Energies</a>。
+      </p>
+      <p>“固体熔点”在 PubChem 的 20°C 状态为 Solid 或 Expected to be a Solid 时显示；其他状态显示为“-”。半径单位为 pm。</p>
+      <p>元素小格子显示经验原子半径；点击元素后的详情页同时保留非键合原子半径。</p>
+      <p class="warning-note">说明：PubChem 标为 Expected to be a Solid 或 Expected to be a Gas 的元素，页面中分别按“固体”或“气体”展示，并用红色状态标签标注。</p>
+      <p class="warning-note">说明：页面中的原子量统一保留两位小数；标准原子量为区间的数据按区间中点显示为单个数值，完整原始值保留在 data/elements.json 中。</p>
+    </footer>
+  </body>
+</html>
