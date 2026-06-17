@@ -504,6 +504,18 @@
         .az-cell.twoz  { background: rgba(167,139,250,0.15); color: rgba(167,139,250,0.9); animation-delay: var(--d); }
         .az-cell.label { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); font-size: 0.5rem; animation: none; }
 
+        /* Chemical periodic table preview variant: 9-col × 4-row grid */
+        .az-preview--chem {
+            grid-template-columns: repeat(9, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            font-size: 0.55rem;
+        }
+
+        /* Span utility classes for az-cell placeholders */
+        .az-cell.span-2 { grid-column: span 2; }
+        .az-cell.span-5 { grid-column: span 5; }
+        .az-cell.span-7 { grid-column: span 7; }
+
         /* Staggered animation delays via nth-child (row×6 + col offset) */
         .az-preview > .az-cell:nth-child(8)  { animation-delay: 0.1s; }
         .az-preview > .az-cell:nth-child(10) { animation-delay: 0.3s; }
@@ -736,18 +748,18 @@
             <!-- Chemical Periodic Table Card -->
             <article class="project-card">
                 <div class="card-preview">
-                    <div class="az-preview" style="grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(4, 1fr); font-size: 0.55rem;">
+                    <div class="az-preview az-preview--chem">
                         <div class="az-cell label">H</div>
-                        <div class="az-cell zero" style="grid-column: span 7;"></div>
+                        <div class="az-cell zero span-7"></div>
                         <div class="az-cell zz">He</div>
                         <div class="az-cell twoz">Li</div>
                         <div class="az-cell twoz">Be</div>
-                        <div class="az-cell zero" style="grid-column: span 5;"></div>
+                        <div class="az-cell zero span-5"></div>
                         <div class="az-cell z2">B</div>
                         <div class="az-cell z2">C</div>
                         <div class="az-cell twoz">Na</div>
                         <div class="az-cell twoz">Mg</div>
-                        <div class="az-cell zero" style="grid-column: span 2;"></div>
+                        <div class="az-cell zero span-2"></div>
                         <div class="az-cell zz">Fe</div>
                         <div class="az-cell zz">Co</div>
                         <div class="az-cell zz">Ni</div>
